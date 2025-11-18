@@ -14,15 +14,17 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	Port       string
+	JWTSecret  string
 }
 
 func LoadConfig() *Config {
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", ""),
-		DBName:     getEnv("DB_NAME", ""),
-		Port:       getEnv("PORT", "9999"),
+		DBHost:    getEnv("DB_HOST", "localhost"),
+		DBPort:    getEnv("DB_PORT", "5432"),
+		DBUser:    getEnv("DB_USER", ""),
+		DBName:    getEnv("DB_NAME", ""),
+		Port:      getEnv("PORT", "9999"),
+		JWTSecret: getEnv("JWT_SECRET", ""),
 	}
 }
 
