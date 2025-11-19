@@ -11,7 +11,7 @@ type StoryImage struct {
 	InvitationID uint `gorm:"not null"`
 
 	// Kolom 'url' pada database. not null berarti kolom tidak boleh kosong.
-	URL string `gorm:"type:varchar;size:255;not null"`
+	ImageURL string `gorm:"type:varchar;size:255;not null"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -19,7 +19,7 @@ type StoryImage struct {
 
 type Invitation struct {
 	ID                uint      `gorm:"primaryKey"`
-	UserID            uint      `gorm:"not null"`
+	UserID            int64      `gorm:"not null"`
 	TemplateID        uint      `gorm:"not null"`
 	Slug              string    `gorm:"type:varchar;size:150;uniqueIndex;not null"`
 	Hero              string    `gorm:"type:text"`

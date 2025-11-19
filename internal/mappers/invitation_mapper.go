@@ -11,7 +11,7 @@ func ToInvitationResponse(inv models.Invitation) dto.InvitationResponse {
 	var storyImageURLs []string
 
 	for _, storyImage := range inv.StoryImages {
-		storyImageURLs = append(storyImageURLs, storyImage.URL)
+		storyImageURLs = append(storyImageURLs, storyImage.ImageURL)
 	}
 
 	return dto.InvitationResponse{
