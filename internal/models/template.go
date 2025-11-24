@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Template struct {
-	ID          uint   `gorm:"primaryKey"`
+	ID          uint64 `gorm:"primaryKey"`
 	Name        string `gorm:"type:varchar;size:150;not null"`
 	Slug        string `gorm:"type:varchar;size:150;uniqueIndex;not null"`
 	Description string `gorm:"type:text"`
