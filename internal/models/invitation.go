@@ -3,12 +3,12 @@ package models
 import "time"
 
 type StoryImage struct {
-	ID uint `gorm:"primaryKey"`
+	ID uint64 `gorm:"primaryKey"`
 
 	// Relasi One-to-Many:
 	// Kolom InvitationID adalah Foreign Key yang merujuk ke tabel invitations.
 	// gorm:"index" membuat indeks pada kolom ini untuk mempercepat pencarian relasi.
-	InvitationID uint `gorm:"not null"`
+	InvitationID uint64 `gorm:"not null"`
 
 	// Kolom 'url' pada database. not null berarti kolom tidak boleh kosong.
 	ImageURL string `gorm:"type:varchar;size:255;not null"`
@@ -18,9 +18,9 @@ type StoryImage struct {
 }
 
 type Invitation struct {
-	ID                uint      `gorm:"primaryKey"`
-	UserID            int64      `gorm:"not null"`
-	TemplateID        uint      `gorm:"not null"`
+	ID                uint64    `gorm:"primaryKey"`
+	UserID            uint64    `gorm:"not null"`
+	TemplateID        uint64    `gorm:"not null"`
 	Slug              string    `gorm:"type:varchar;size:150;uniqueIndex;not null"`
 	Hero              string    `gorm:"type:text"`
 	BrideName         string    `gorm:"type:varchar;size:150;not null"`
