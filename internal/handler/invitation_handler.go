@@ -29,36 +29,27 @@ func (h *InvitationHandler) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	mainImage, err := c.FormFile("image")
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "image is required"})
-	}
-
 	var mainImageURL string
 
-	result, err := h.uploader.UploadSingle(c, mainImage)
+	result, err := h.uploader.UploadSingle(c, "image")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	mainImageURL = result.FilePath
 
 	// story images
-	form, _ := c.MultipartForm()
-	storyFiles := form.File["story_images"]
 	var storyImageURLs []string
 
-	if storyFiles != nil {
-		results, err := h.uploader.UploadMultiple(c, storyFiles)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-		}
-
-		for _, r := range results {
-			storyImageURLs = append(storyImageURLs, r.FilePath)
-		}
+	results, err := h.uploader.UploadMultiple(c, "story_images")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	userID, ok := c.Locals("userID").(int64)
+	for _, r := range results {
+		storyImageURLs = append(storyImageURLs, r.FilePath)
+	}
+
+	userID, ok := c.Locals("userID").(uint64)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
 	}
@@ -72,4 +63,61 @@ func (h *InvitationHandler) Create(c *fiber.Ctx) error {
 		"message": "invitation create successfully",
 		"data":    response,
 	})
+}
+
+func (h *InvitationHandler) GetBySlug(c *fiber.Ctx) error {
+	slug := c.Params("slug")
+
+	response, err := h.invService.GetInvitationBySlug(slug)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": response,
+	})
+}
+
+func (h *InvitationHandler) GetAllByUserID(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(uint64)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
+
+	responses, err := h.invService.GetAllInvitationsByUserID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": responses,
+	})
+}
+
+func (h *InvitationHandler) Update(c *fiber.Ctx) error {
+	var req dto.UpdateInvitationRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	if err := h.validator.Validate(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	var newMainImageURL string
+
+	result, err := h.uploader.UploadSingle(c, "image")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	newMainImageURL = result.FilePath
+
+	slug := c.Params("slug")
+
+	if err := h.invService.UpdateInvitationBySlug(slug, req, newMainImageURL); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(fiber.Map{"message": "invitation update successfully"})
 }
