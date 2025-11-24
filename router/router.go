@@ -9,6 +9,7 @@ import (
 type Handlers struct {
 	AuthHandler       *handler.AuthHandler
 	User              *handler.UserHandler
+	TemplateHandler   *handler.TemplateHandler
 	InvitationHandler *handler.InvitationHandler
 }
 
@@ -28,12 +29,23 @@ func SetupRoutes(app *fiber.App, h *Handlers) {
 		public.Post("/login", h.AuthHandler.Login)
 	}
 
+	invitationPublic := v1.Group("/invitations")
+	{
+		invitationPublic.Get("/:slug", h.InvitationHandler.GetBySlug)
+	}
+
 	protected := v1.Group("", middleware.AuthMiddleware)
 	{
 		users := protected.Group("/users")
 		users.Post("/", h.User.Create)
 
+		template := protected.Group("/templates")
+		template.Post("/", h.TemplateHandler.Create)
+
 		invitations := protected.Group("/invitations")
 		invitations.Post("/", h.InvitationHandler.Create)
+		invitations.Get("/", h.InvitationHandler.GetAllByUserID)
+		invitations.Get("/:slug", h.InvitationHandler.GetBySlug)
+		invitations.Put("/:slug", h.InvitationHandler.Update)
 	}
 }

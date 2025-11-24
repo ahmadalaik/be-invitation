@@ -17,7 +17,7 @@ type (
 
 type (
 	TemplateResponse struct {
-		ID          uint   `json:"id"`
+		ID          uint64 `json:"id"`
 		Name        string `json:"name"`
 		Slug        string `json:"slug"`
 		Description string `json:"description"`
