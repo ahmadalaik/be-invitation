@@ -2,8 +2,7 @@ package dto
 
 type (
 	CreateInvitationRequest struct {
-		TemplateID        uint   `form:"template_id" validate:"required"`
-		Slug              string `form:"slug" validate:"required"`
+		TemplateID        uint64 `form:"template_id" validate:"required"`
 		BrideName         string `form:"bride_name" validate:"required"`
 		GroomName         string `form:"groom_name" validate:"required"`
 		EventDateTime     string `form:"event_date_time" validate:"required"`
@@ -16,6 +15,7 @@ type (
 	}
 
 	UpdateInvitationRequest struct {
+		TemplateID        uint64 `form:"template_id" validate:"required"`
 		BrideName         string `form:"bride_name" validate:"required"`
 		GroomName         string `form:"groom_name" validate:"required"`
 		EventDateTime     string `form:"event_date_time" validate:"required"`
@@ -30,7 +30,7 @@ type (
 
 type (
 	InvitationResponse struct {
-		ID                uint     `json:"id"`
+		ID                uint64   `json:"id"`
 		Slug              string   `json:"slug"`
 		Hero              string   `json:"hero"`
 		BrideName         string   `json:"bride_name"`
@@ -43,7 +43,7 @@ type (
 		ReceptionAddress  string   `json:"reception_address"`
 		Story             string   `json:"story"`
 		StoryImages       []string `json:"story_images"`
-		UserID            int64     `json:"user_id"`
-		TemplateID        uint     `json:"template_id"`
+		UserID            uint64   `json:"user_id"`
+		TemplateID        uint64   `json:"template_id"`
 	}
 )
