@@ -13,9 +13,10 @@ import (
 )
 
 type UploadConfig struct {
-	Destination string
-	MAXSizeMB   int64
-	AllowedExt  []string
+	Destination     string
+	MaxSingleSize   int64
+	MaxMultipleSize int64
+	AllowedExt      []string
 }
 
 type UploadResult struct {
@@ -32,7 +33,16 @@ func NewUploader(cfg UploadConfig) *Uploader {
 	return &Uploader{cfg}
 }
 
-func (u *Uploader) UploadSingle(c *fiber.Ctx, file *multipart.FileHeader) (*UploadResult, error) {
+func (u *Uploader) UploadSingle(c *fiber.Ctx, field string) (*UploadResult, error) {
+	file, err := c.FormFile(field)
+	if err != nil {
+		return nil, err
+	}
+
+	if file.Size > u.cfg.MaxSingleSize {
+		return nil, fmt.Errorf("file size is too large, maximum %d mb", u.cfg.MaxSingleSize/1024/1024)
+	}
+
 	if err := u.ValidationFile(file); err != nil {
 		return nil, err
 	}
@@ -51,10 +61,27 @@ func (u *Uploader) UploadSingle(c *fiber.Ctx, file *multipart.FileHeader) (*Uplo
 	}, nil
 }
 
-func (u *Uploader) UploadMultiple(c *fiber.Ctx, files []*multipart.FileHeader) ([]UploadResult, error) {
+func (u *Uploader) UploadMultiple(c *fiber.Ctx, field string) ([]UploadResult, error) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		return nil, err
+	}
+
+	files := form.File[field]
+	if files == nil {
+		return nil, err
+	}
+
 	var results []UploadResult
+	var totalSize int64 = 0
 
 	for _, file := range files {
+		totalSize += file.Size
+
+		if totalSize > u.cfg.MaxMultipleSize {
+			return nil, fmt.Errorf("total file size is too large, maximum %d mb", u.cfg.MaxMultipleSize/1024/1024)
+		}
+
 		if err := u.ValidationFile(file); err != nil {
 			return nil, err
 		}
@@ -89,11 +116,6 @@ func (u *Uploader) ValidationFile(file *multipart.FileHeader) error {
 
 	if !allowed {
 		return errors.New("file extension not allowed")
-	}
-
-	maxBytes := u.cfg.MAXSizeMB << 20
-	if file.Size > maxBytes {
-		return errors.New("file size exceeds limit")
 	}
 
 	return nil
