@@ -1,16 +1,21 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ahmadalaik/be-invitation/internal/dto"
 	"github.com/ahmadalaik/be-invitation/internal/mappers"
 	"github.com/ahmadalaik/be-invitation/internal/models"
 	"github.com/ahmadalaik/be-invitation/internal/repository"
+	"github.com/ahmadalaik/be-invitation/pkg/slug"
 )
 
 type InvitationService interface {
-	CreateInvitation(userID int64, req dto.CreateInvitationRequest, mainImageURL string, storyImageURLs []string) (*dto.InvitationResponse, error)
+	CreateInvitation(userID uint64, req dto.CreateInvitationRequest, mainImageURL string, storyImageURLs []string) (*dto.InvitationResponse, error)
+	GetInvitationBySlug(invSlug string) (*dto.InvitationResponse, error)
+	UpdateInvitationBySlug(invSlug string, req dto.UpdateInvitationRequest, newMainImageURL string) error
+	GetAllInvitationsByUserID(userID uint64) ([]dto.InvitationResponse, error)
 }
 
 type invitationService struct {
@@ -25,7 +30,7 @@ func NewInvitationService(invRepo repository.InvitationRepository, storyImageRep
 	}
 }
 
-func (s *invitationService) CreateInvitation(userID int64, req dto.CreateInvitationRequest, mainImageURL string, storyImageURLs []string) (*dto.InvitationResponse, error) {
+func (s *invitationService) CreateInvitation(userID uint64, req dto.CreateInvitationRequest, mainImageURL string, storyImageURLs []string) (*dto.InvitationResponse, error) {
 	eventDateTime, err := time.Parse(time.RFC3339, req.EventDateTime)
 	if err != nil {
 		return nil, err
@@ -36,10 +41,12 @@ func (s *invitationService) CreateInvitation(userID int64, req dto.CreateInvitat
 		return nil, err
 	}
 
+	slug := fmt.Sprintf("%s-and-%s", slug.GenerateSlug(req.BrideName), slug.GenerateSlug(req.GroomName))
+
 	invitation := models.Invitation{
 		UserID:            userID,
 		TemplateID:        req.TemplateID,
-		Slug:              req.Slug,
+		Slug:              slug,
 		Hero:              mainImageURL,
 		BrideName:         req.BrideName,
 		GroomName:         req.GroomName,
@@ -74,4 +81,63 @@ func (s *invitationService) CreateInvitation(userID int64, req dto.CreateInvitat
 
 	response := mappers.ToInvitationResponse(invitation)
 	return &response, nil
+}
+
+func (s *invitationService) GetInvitationBySlug(invSlug string) (*dto.InvitationResponse, error) {
+	invitation, err := s.invRepo.FindBySlug(invSlug)
+	if err != nil {
+		return nil, err
+	}
+
+	response := mappers.ToInvitationResponse(*invitation)
+	return &response, nil
+}
+
+func (s *invitationService) UpdateInvitationBySlug(invSlug string, req dto.UpdateInvitationRequest, newMainImageURL string) error {
+	invitation, err := s.invRepo.FindBySlug(invSlug)
+	if err != nil {
+		return err
+	}
+
+	newInvSlug := fmt.Sprintf("%s-and-%s", slug.GenerateSlug(req.BrideName), slug.GenerateSlug(req.GroomName))
+
+	eventDateTime, err := time.Parse(time.RFC3339, req.EventDateTime)
+	if err != nil {
+		return err
+	}
+
+	receptionDateTime, err := time.Parse(time.RFC3339, req.ReceptionDateTime)
+	if err != nil {
+		return err
+	}
+
+	invitation.TemplateID = req.TemplateID
+	invitation.Slug = newInvSlug
+	invitation.Hero = newMainImageURL
+	invitation.BrideName = req.BrideName
+	invitation.GroomName = req.GroomName
+	invitation.EventDateTime = eventDateTime
+	invitation.Venue = req.Venue
+	invitation.Address = req.Address
+	invitation.ReceptionDateTime = receptionDateTime
+	invitation.ReceptionVenue = req.ReceptionVenue
+	invitation.ReceptionAddress = req.ReceptionAddress
+	invitation.Story = req.Story
+
+	return s.invRepo.Update(invitation)
+}
+
+func (s *invitationService) GetAllInvitationsByUserID(userID uint64) ([]dto.InvitationResponse, error) {
+	invitations, err := s.invRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []dto.InvitationResponse
+	for _, inv := range invitations {
+		res := mappers.ToInvitationResponse(inv)
+		responses = append(responses, res)
+	}
+
+	return responses, nil
 }
