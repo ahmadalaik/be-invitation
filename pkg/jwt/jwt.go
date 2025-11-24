@@ -10,10 +10,11 @@ import (
 
 var secretKey = []byte(config.LoadConfig().JWTSecret)
 
-func GenerateToken(username string) (string, error) {
+func GenerateToken(id uint64, username string) (string, error) {
 	expirationTime := time.Now().Add(60 * time.Minute).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":       id,
 		"username": username,
 		"exp":      expirationTime,
 	})
@@ -25,7 +26,7 @@ func GenerateToken(username string) (string, error) {
 	return tokenStr, nil
 }
 
-func ValidateToken(tokenStr string) (string, error) {
+func ValidateToken(tokenStr string) (uint64, string, error) {
 	claims := jwt.MapClaims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (any, error) {
@@ -36,8 +37,8 @@ func ValidateToken(tokenStr string) (string, error) {
 		return secretKey, nil
 	})
 	if err != nil || !token.Valid {
-		return "", err
+		return 0, "", err
 	}
 
-	return claims["username"].(string), nil
+	return uint64(claims["id"].(float64)), claims["username"].(string), nil
 }
